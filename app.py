@@ -1,15 +1,19 @@
+import argparse
 from time import sleep
 from selenium import webdriver, common
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeDriverManager
+from webdriver_manager.microsoft import IEDriverManager
 
 ###############################################################################
 #                          ARGUMENT PARSING START                             #
 ###############################################################################
-import argparse
 
 parser = argparse.ArgumentParser(prog="app", description="Options for customizing program")
 parser.add_argument('-n', '--mbr', type=int, metavar="", help="Number of messages to ignore before sending the auto response again")
 parser.add_argument('-m', '--message', type=str, metavar="", help="Message to display as an automated response")
-parser.add_argument('-b', '--browser', type=str.lower, metavar="", help="Browser to use Whatsapp Web on", choices=['chrome', 'firefox', 'edge', 'ie'])
+parser.add_argument('-b', '--browser', type=str.lower, metavar="", help="Browser to use Whatsapp Web on [Chrome is default]", choices=['chrome', 'firefox', 'edge', 'ie'])
 args = vars(parser.parse_args())
 
 # Get --mbr command line argument value or assign a default
@@ -22,42 +26,30 @@ else:
 	response_message = args['message']
 
 # Get --browser command line argument value or assign a default
+selected_browser = args['browser']
+
 try:
-	selected_browser = args['browser']
-	
 	# Support for Chrome
 	if (selected_browser is None) or (selected_browser == 'chrome'):
-		from webdriver_manager.chrome import ChromeDriverManager
 		browser = webdriver.Chrome(ChromeDriverManager().install())
 
 	# Support for Firefox
 	elif selected_browser.lower() == 'firefox':
-		from webdriver_manager.firefox import GeckoDriverManager
 		browser = webdriver.Firefox(executable_path=GeckoDriverManager().install())
 
 	# Support for Microsoft Edge
 	elif selected_browser.lower() == 'edge':
-		from webdriver_manager.microsoft import EdgeDriverManager
-		
-		try:
-			browser = webdriver.Edge(EdgeDriverManager().install())
-		except common.exceptions.WebDriverException:
-			print("Error! Note, Microsoft Edge is only compatible with Windows machines")
-			exit()
+		browser = webdriver.Edge(EdgeDriverManager().install())
 
 	# Support for Microsoft Internet Explorer
 	elif selected_browser.lower() == 'ie':
-		from webdriver_manager.microsoft import IEDriverManager
+		browser = webdriver.Ie(IEDriverManager().install())
 
-		try:
-			browser = webdriver.Ie(IEDriverManager().install())
-		except common.exceptions.WebDriverException:
-			print("Error! Note, Microsoft Internet Explorer is only compatible with Windows machines")
-			exit()
+	else:
+		exit("Invalid choice. Quitting now...")
 
-except common.exceptions.WebDriverException:
-	print("Error getting web driver! Quitting now...")
-	exit()
+except:
+	exit('Error! Make sure you\'re selecting the right browser! Quitting now...')
 
 ###############################################################################
 #                           AUTO RESPONSE LOGIC                               #
@@ -73,7 +65,7 @@ people_list = []
 try:
 	browser.get('https://web.whatsapp.com')
 
-	# Run an infinite loop to keep checking for new messages
+	# Run an infinite loop to keep on checking for new messages
 	while True:
 		# Delay by 1 second
 		sleep(1)
@@ -125,5 +117,4 @@ try:
 			except common.exceptions.WebDriverException:
 				print("New message received!")
 except common.exceptions.WebDriverException:
-	print("Quitting now...")
-	exit()
+	exit("Quitting now...")
